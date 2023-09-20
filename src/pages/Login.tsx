@@ -34,7 +34,6 @@ function Login() {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    console.log(event);
     dispatch(saveEmail(email));
     navigate('/carteira');
   };

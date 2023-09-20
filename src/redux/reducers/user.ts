@@ -10,7 +10,6 @@ const userReducer = (
 ) => {
   switch (action.type) {
     case SAVE_EMAIL:
-      console.log(action.payload.email);
       return {
         ...state,
         email: action.payload.email,
