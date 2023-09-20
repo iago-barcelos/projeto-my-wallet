@@ -42,7 +42,6 @@ const walletReducer = (
       };
 
     case ADD_EXPENSE:
-      console.log(action.payload);
       return {
         ...state,
         expenses: [...state.expenses, action.payload],

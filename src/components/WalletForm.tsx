@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addExpense, fetchCurrencies } from '../redux/actions';
 import { Dispatch, GlobalState } from '../types';
+import store from '../redux';
 
 type FormValuesTypes = {
   description: string,
@@ -13,10 +14,10 @@ type FormValuesTypes = {
 
 const initialFormValues = {
   description: '',
-  tag: 'alimentacao',
+  tag: 'Alimentação',
   value: '',
   currency: 'USD',
-  method: 'cash',
+  method: 'Dinheiro',
 };
 
 function WalletForm() {
@@ -52,19 +53,24 @@ function WalletForm() {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    dispatch(fetchCurrencies());
-    const expenseId = expenses.length > 0 ? expenses.length : 0;
-    const expense = {
-      id: expenseId,
-      value: value.toString(),
-      description,
-      currency,
-      method,
-      tag,
-      exchangeRates,
-    };
-    dispatch(addExpense(expense));
-    setFormValues(initialFormValues);
+    dispatch(fetchCurrencies()).then(() => {
+      const lastExpense = expenses[expenses.length - 1];
+      const expenseId = typeof lastExpense !== 'undefined' ? lastExpense.id + 1 : 0;
+      const expense = {
+        id: expenseId as number,
+        value: value.toString(),
+        description,
+        currency,
+        method,
+        tag,
+        exchangeRates,
+      };
+      console.log('Despesa a ser adicionada:', expense);
+      dispatch(addExpense(expense));
+      console.log('Ação addExpense despachada');
+      console.log('Estado Global após adicionar despesa:', store.getState());
+      setFormValues(initialFormValues);
+    });
   };
 
   const validateForm = () => {
@@ -139,8 +145,8 @@ function WalletForm() {
             value={ method }
           >
             <option value="Dinheiro">Dinheiro</option>
-            <option value="Cartao de Debito">Cartão de débito</option>
-            <option value="Cartao de Credito">Cartão de crédito</option>
+            <option value="Cartao de Débito">Cartão de débito</option>
+            <option value="Cartao de Crédito">Cartão de crédito</option>
           </select>
         </label>
         <button type="submit" disabled={ !validateForm() }>

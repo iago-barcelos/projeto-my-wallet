@@ -2,6 +2,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
 import { Dispatch, GlobalState } from '../types';
 
+import Table from '../components/Table';
 import WalletForm from '../components/WalletForm';
 import { fetchCurrencies } from '../redux/actions';
 
@@ -40,6 +41,7 @@ function Wallet() {
       </header>
       <main>
         <WalletForm />
+        <Table />
       </main>
     </>
   );
