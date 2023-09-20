@@ -1,101 +1,76 @@
-import {
-  screen,
-} from '@testing-library/react';
-import { vi } from 'vitest';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import mockData from './helpers/mockData';
+import { vi } from 'vitest';
 import { renderWithRouterAndRedux } from './helpers/renderWith';
-import * as APIModule from '../services/currenciesAPI';
+import mockData from './helpers/mockData';
 import App from '../App';
 
-beforeEach(() => {
-  vi.spyOn(APIModule, 'getCurrencies').mockResolvedValue(mockData);
-});
+describe('Testa tela de Login', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
+  beforeEach(() => {
+    global.fetch = vi.fn().mockResolvedValue({
+      json: async () => (mockData),
+    });
+  });
 
-describe('Testes da página de login', () => {
-  test('se os elementos aparecem na tela', () => {
+  const email = 'email-input';
+  const password = 'password-input';
+  const emailTest = 'teste@teste.com';
+  const passwordTest = '123456';
+  it('Verifica se a tela de login possui os inputs de login e senha', () => {
     renderWithRouterAndRedux(<App />);
 
-    const emailInput = screen.getByPlaceholderText(/e-mail/i);
-    expect(emailInput).toBeInTheDocument();
-
-    const passwordInput = screen.getByPlaceholderText(/senha/i);
-    expect(passwordInput).toBeInTheDocument();
-
-    const button = screen.getByRole('button', {
-      name: /entrar/i,
-    });
-    expect(button).toBeInTheDocument();
+    expect(screen.getByTestId(email)).toBeInTheDocument();
+    expect(screen.getByTestId(password)).toBeInTheDocument();
   });
 
-  test('página da carteira', () => {
-    renderWithRouterAndRedux(<App />, { initialEntries: ['/carteira'] });
+  it('Verifica se antes das validações de input, o botão Entrar está desabilitado', () => {
+    renderWithRouterAndRedux(<App />);
 
-    screen.getByText(/despesa total: r\$/i);
+    expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Entrar' })).toBeDisabled();
   });
 
-  test('adicionar despesa na carteira', async () => {
-    const initialState = {
-      user: {
-        email: 'admin@admin.com',
-      },
-      wallet: {
-        currencies: [
-          'USD',
-          'CAD',
-          'GBP',
-          'ARS',
-          'BTC',
-          'LTC',
-          'EUR',
-          'JPY',
-          'CHF',
-          'AUD',
-          'CNY',
-          'ILS',
-          'ETH',
-          'XRP',
-          'DOGE',
-        ],
-        expenses: [],
-        editor: false,
-        idToEdit: 0,
-        isFetchingCurrencies: false,
-        fetchCurrenciesErrorMessage: '',
-        exchangeRates: null,
-      },
-    };
-    renderWithRouterAndRedux(<App />, { initialEntries: ['/carteira'], initialState });
+  it('Verifica se após as validações de input, o botão Entrar será habilitado', async () => {
+    renderWithRouterAndRedux(<App />);
 
-    const descriptionInput = screen.getByRole('textbox', {
-      name: /descrição da despesa:/i,
-    });
-    const tagInput = screen.getByRole('combobox', {
-      name: /categoria da despesa:/i,
-    });
-    const valueInput = screen.getByRole('spinbutton', {
-      name: /valor da despesa:/i,
-    });
-    const currencyInput = screen.getByRole('combobox', {
-      name: /moeda:/i,
-    });
-    const methodInput = screen.getByRole('combobox', {
-      name: /método de pagamento/i,
-    });
+    const emailInput = screen.getByTestId(email);
+    const passwordInput = screen.getByTestId(password);
 
-    await userEvent.type(descriptionInput, 'despesa');
-    await userEvent.selectOptions(tagInput, 'Lazer');
-    await userEvent.type(valueInput, '55');
-    await userEvent.selectOptions(currencyInput, 'USD');
-    await userEvent.selectOptions(methodInput, 'Dinheiro');
+    await userEvent.type(emailInput, emailTest);
+    await userEvent.type(passwordInput, passwordTest);
 
-    const button = screen.getByRole('button', {
-      name: /adicionar despesa/i,
-    });
-    await userEvent.click(button);
+    expect(screen.getByRole('button', { name: 'Entrar' })).toHaveProperty('disabled', false);
+  });
+
+  it('Verifica se após as validações de input, o botão Entrar será habilitado', async () => {
+    renderWithRouterAndRedux(<App />);
+
+    const emailInput = screen.getByTestId(email);
+    const passwordInput = screen.getByTestId(password);
+
+    await userEvent.type(emailInput, emailTest);
+    await userEvent.type(passwordInput, passwordTest);
+
+    expect(screen.getByRole('button', { name: 'Entrar' })).toHaveProperty('disabled', false);
+  });
+
+  it('Uma vez validados os dados, verifica se rediciona para a rota /carteira', async () => {
+    renderWithRouterAndRedux(<App />);
+
+    const emailInput = screen.getByTestId(email);
+    const passwordInput = screen.getByTestId(password);
+
+    await userEvent.type(emailInput, emailTest);
+    await userEvent.type(passwordInput, passwordTest);
+
+    const btnEntrar = screen.getByRole('button', { name: 'Entrar' });
+
+    await userEvent.click(btnEntrar);
+
+    expect(screen.getByText(/0.00/i)).toBeInTheDocument();
   });
 });

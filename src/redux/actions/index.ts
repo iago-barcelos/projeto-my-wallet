@@ -1,47 +1,56 @@
-import { Dispatch } from 'redux';
-import { Currencies, Expense } from '../../types';
-import { getCurrencies } from '../../services/currenciesAPI';
-
-export const GET_CURRENCIES_STARTED = 'GET_CURRENCIES_STARTED';
-export const GET_CURRENCIES_SUCCESSFUL = 'GET_CURRENCIES_SUCCESSFUL';
-export const GET_CURRENCIES_FAILED = 'GET_CURRENCIES_FAILED';
-export const SAVE_EMAIL = 'SAVE_EMAIL';
-export const ADD_EXPENSE = 'ADD_EXPENSE';
-
-const getCurrenciesStarted = () => ({
-  type: GET_CURRENCIES_SUCCESSFUL,
+export const loginUser = (email: string) => ({
+  type: 'ADD_EMAIL',
+  payload: email,
 });
 
-const getCurrenciesSuccessful = (data: Currencies) => ({
-  type: GET_CURRENCIES_SUCCESSFUL,
-  payload: data,
+export const listCurrencies = (currencies: string[]) => ({
+  type: 'LIST_CURRENCIES',
+  payload: currencies,
 });
 
-const getCurrenciesFailed = (error: string) => ({
-  type: GET_CURRENCIES_FAILED,
-  payload: {
-    error,
-  },
-});
-
-export const fetchCurrencies = () => async (dispatch: Dispatch) => {
-  try {
-    dispatch(getCurrenciesStarted());
-    const data = await getCurrencies();
-    dispatch(getCurrenciesSuccessful(data));
-  } catch (error: any) {
-    dispatch(getCurrenciesFailed(error.message));
-  }
+export const fetchCurrencies = () => {
+  return async (dispatch) => {
+    const response = await fetch('https://economia.awesomeapi.com.br/json/all');
+    const data = await response.json();
+    delete data.USDT;
+    const currencies = Object.keys(data);
+    console.log('currency', currencies);
+    dispatch(listCurrencies(currencies));
+  };
 };
 
-export const saveEmail = (email: string) => ({
-  type: SAVE_EMAIL,
-  payload: {
-    email,
-  },
+export const addExpenses = (dataExpense) => ({
+  type: 'ADD_EXPENSE',
+  payload: dataExpense,
 });
 
-export const addExpense = (expense: Expense) => ({
-  type: ADD_EXPENSE,
+export const addWallet = (expense) => {
+  return async (dispatch) => {
+    const response = await fetch('https://economia.awesomeapi.com.br/json/all');
+    const data = await response.json();
+    delete data.USDT;
+    dispatch(addExpenses({ ...expense, exchangeRates: data }));
+  };
+};
+
+export const deleteExpense = (expense) => ({
+  type: 'UPDATE_EXPENSES',
   payload: expense,
+});
+
+export const removeExpense = (expenseId, updateExpenses) => {
+  return (dispatch) => {
+    const newExpenses = updateExpenses.filter((expense) => expense.id !== expenseId);
+    dispatch(deleteExpense(newExpenses));
+  };
+};
+
+export const editExpense = (id) => ({
+  type: 'EDIT_EXPENSE',
+  payload: id,
+});
+
+export const updateExpense = (expenses) => ({
+  type: 'UPDATE_EXPENSES',
+  payload: expenses,
 });

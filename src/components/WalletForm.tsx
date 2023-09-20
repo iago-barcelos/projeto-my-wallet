@@ -1,159 +1,143 @@
-import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { addExpense, fetchCurrencies } from '../redux/actions';
-import { Dispatch, GlobalState } from '../types';
-import store from '../redux';
-
-type FormValuesTypes = {
-  description: string,
-  tag: string,
-  value: string | number,
-  currency: string,
-  method: string,
-};
-
-const initialFormValues = {
-  description: '',
-  tag: 'Alimentação',
-  value: '',
-  currency: 'USD',
-  method: 'Dinheiro',
-};
+import { useState, useEffect } from 'react';
+import {
+  addWallet,
+  fetchCurrencies,
+  updateExpense,
+} from '../redux/actions/index';
 
 function WalletForm() {
-  const [formValues, setFormValues] = useState<FormValuesTypes>(initialFormValues);
-  const { description, tag, value, currency, method } = formValues;
+  const dispatch = useDispatch();
+  useEffect(() => {
+    dispatch(fetchCurrencies());
+  }, [dispatch]);
+  const { currencies, expenses } = useSelector((state) => state.wallet);
+  const { isEdit, id } = useSelector((state) => state.walletUpdate);
 
-  const dispatch: Dispatch = useDispatch();
+  const [value, setValue] = useState('');
+  const [description, setDescription] = useState('');
+  const [currency, setCurrency] = useState('USD');
+  const [payment, setPayment] = useState('Dinheiro');
+  const [category, setCategory] = useState('Alimentação');
 
-  const handleChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
-  ) => {
-    const { name, type } = event.target;
-    const val = type === 'checkbox'
-      ? (event.target as HTMLInputElement).checked
-      : event.target.value;
-    setFormValues({
-      ...formValues,
-      [name]: val,
-    });
+  const resetState = () => {
+    setValue('');
+    setDescription('');
+    setCurrency('USD');
+    setPayment('Dinheiro');
+    setCategory('Alimentação');
   };
 
-  const exchangeRates = useSelector((
-    globalState: GlobalState,
-  ) => globalState.wallet.exchangeRates);
-
-  const currencies = useSelector((
-    globalState: GlobalState,
-  ) => globalState.wallet.currencies);
-
-  const expenses = useSelector((
-    globalState: GlobalState,
-  ) => globalState.wallet.expenses);
-
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handlerSubmit = (event) => {
     event.preventDefault();
-    dispatch(fetchCurrencies()).then(() => {
-      const lastExpense = expenses[expenses.length - 1];
-      const expenseId = typeof lastExpense !== 'undefined' ? lastExpense.id + 1 : 0;
-      const expense = {
-        id: expenseId as number,
-        value: value.toString(),
-        description,
-        currency,
-        method,
-        tag,
-        exchangeRates,
-      };
-      console.log('Despesa a ser adicionada:', expense);
-      dispatch(addExpense(expense));
-      console.log('Ação addExpense despachada');
-      console.log('Estado Global após adicionar despesa:', store.getState());
-      setFormValues(initialFormValues);
-    });
+    const expenseData = {
+      id: expenses.length,
+      value,
+      description,
+      currency,
+      method: payment,
+      tag: category,
+    };
+    dispatch(addWallet(expenseData));
+    resetState();
   };
 
-  const validateForm = () => {
-    return description.length > 0 && Number(value) > 0;
+  const handlerSubmitEdit = (event) => {
+    event.preventDefault();
+    const newData = {
+      value,
+      description,
+      currency,
+      method: payment,
+      tag: category,
+    };
+    const obj = expenses.find((element) => element.id === id);
+    console.log('obj', obj);
+    const newTable = expenses.map((expense) => {
+      if (+expense.id === +id) {
+        return {
+          ...obj,
+          ...newData,
+        };
+      }
+      return expense;
+    });
+    dispatch(updateExpense(newTable));
   };
 
   return (
-    <div>
-      <form onSubmit={ handleSubmit }>
-        <label htmlFor="description">
-          Descrição da Despesa:
-          <input
-            data-testid="description-input"
-            id="description"
-            name="description"
-            type="text"
-            onChange={ handleChange }
-            value={ description }
-          />
-        </label>
-        <label htmlFor="tag">
-          Categoria da Despesa:
-          <select
-            data-testid="tag-input"
-            id="tag"
-            name="tag"
-            onChange={ handleChange }
-            value={ tag }
-          >
-            <option value="Alimentacao">Alimentação</option>
-            <option value="Lazer">Lazer</option>
-            <option value="Trabalho">Trabalho</option>
-            <option value="Transporte">Transporte</option>
-            <option value="Saude">Saúde</option>
-          </select>
-        </label>
-        <label htmlFor="value">
-          Valor da Despesa:
-          <input
-            data-testid="value-input"
-            id="value"
-            name="value"
-            type="number"
-            onChange={ handleChange }
-            value={ value }
-          />
-        </label>
-        <label htmlFor="currency">
-          Moeda:
-          <select
-            name="currency"
-            id="currency"
-            data-testid="currency-input"
-            onChange={ handleChange }
-            value={ currency }
-          >
-            {
-              currencies && currencies
-                .map((cur) => (
-                  <option key={ cur } value={ cur }>{cur}</option>
-                ))
-            }
-          </select>
-        </label>
-        <label htmlFor="method">
-          Método de Pagamento
-          <select
-            name="method"
-            id="method"
-            data-testid="method-input"
-            onChange={ handleChange }
-            value={ method }
-          >
-            <option value="Dinheiro">Dinheiro</option>
-            <option value="Cartao de Débito">Cartão de débito</option>
-            <option value="Cartao de Crédito">Cartão de crédito</option>
-          </select>
-        </label>
-        <button type="submit" disabled={ !validateForm() }>
-          Adicionar despesa
-        </button>
-      </form>
-    </div>
+    <form
+      action="submit"
+      onSubmit={ (event) => (isEdit ? handlerSubmitEdit(event) : handlerSubmit(event)) }
+    >
+      <label htmlFor="value">
+        Valor
+        <input
+          type="number"
+          data-testid="value-input"
+          value={ value }
+          onChange={ (event) => setValue(event.target.value) }
+        />
+      </label>
+      <label htmlFor="description">
+        Descrição da Despesa
+        <input
+          type="text"
+          data-testid="description-input"
+          value={ description }
+          onChange={ (event) => setDescription(event.target.value) }
+        />
+      </label>
+      <label htmlFor="currency">
+        Moeda
+        <select
+          id="currency"
+          data-testid="currency-input"
+          value={ currency }
+          onChange={ (event) => setCurrency(event.target.value) }
+        >
+          {currencies.map((element, index) => {
+            return (
+              <option
+                value={ element }
+                key={ index }
+              >
+                { element }
+              </option>
+            );
+          })}
+        </select>
+      </label>
+      <label htmlFor="payment">
+        Método de Pagamento
+        <select
+          id="payment"
+          data-testid="method-input"
+          value={ payment }
+          onChange={ (event) => setPayment(event.target.value) }
+        >
+          <option value="Dinheiro">Dinheiro</option>
+          <option value="Cartão de crédito">Cartão de crédito</option>
+          <option value="Cartão de débito">Cartão de débito</option>
+        </select>
+      </label>
+      <label htmlFor="category">
+        Categoria da Despesa
+        <select
+          id="category"
+          data-testid="tag-input"
+          value={ category }
+          onChange={ (event) => setCategory(event.target.value) }
+        >
+          <option value="Alimentação">Alimentação</option>
+          <option value="Lazer">Lazer</option>
+          <option value="Trabalho">Trabalho</option>
+          <option value="Transporte">Transporte</option>
+          <option value="Saúde">Saúde</option>
+        </select>
+      </label>
+      {isEdit ? <button>Editar despesas</button> : <button>Adicionar despesas</button> }
+    </form>
   );
 }
 

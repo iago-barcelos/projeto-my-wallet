@@ -1,71 +1,64 @@
-import { useState } from 'react';
+import { ChangeEvent, FormEvent, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { saveEmail } from '../redux/actions';
-
-export type FormValuesTypes = {
-  email: string,
-  password: string,
-};
-
-const initialFormValues = {
-  email: '',
-  password: '',
-};
+import { loginUser } from '../redux/actions';
 
 function Login() {
-  const [formValues, setFormValues] = useState<FormValuesTypes>(initialFormValues);
-  const { email, password } = formValues;
-  const dispatch = useDispatch();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
-  ) => {
-    const { name, type } = event.target;
-    const value = type === 'checkbox'
-      ? (event.target as HTMLInputElement).checked
-      : event.target.value;
-    setFormValues({
-      ...formValues,
-      [name]: value,
-    });
+  const dispatch = useDispatch();
+
+  const validateEmail = () => {
+    const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const validEmail = regex.test(email);
+    return validEmail;
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const validatePassword = () => {
+    const validPassWord = password.length >= 6;
+    return validPassWord;
+  };
+
+  const testEmail = validateEmail();
+  const testPassword = validatePassword();
+  const isDisabled = !(testEmail && testPassword);
+
+  const handlerSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    dispatch(saveEmail(email));
+    dispatch(loginUser(email));
     navigate('/carteira');
   };
 
-  const validateForm = (): boolean => {
-    return !!email.match(/^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}$/) && password.length >= 6;
-  };
-
   return (
-    <div>
-      <form onSubmit={ handleSubmit }>
-        <input
-          data-testid="email-input"
-          id="email"
-          name="email"
-          onChange={ handleChange }
-          placeholder="E-mail"
-          type="email"
-          value={ email }
-        />
-        <input
-          data-testid="password-input"
-          id="password"
-          name="password"
-          onChange={ handleChange }
-          placeholder="Senha"
-          type="password"
-          value={ password }
-        />
-        <button disabled={ !validateForm() } type="submit">Entrar</button>
-      </form>
-    </div>
+    <form>
+      <input
+        data-testid="email-input"
+        type="text"
+        id="email"
+        placeholder="E-mail"
+        onChange={
+          (event:ChangeEvent<HTMLInputElement>) => setEmail(event.target.value)
+        }
+      />
+      <input
+        data-testid="password-input"
+        type="text"
+        id="password"
+        placeholder="Senha"
+        onChange={
+          (event:ChangeEvent<HTMLInputElement>) => setPassword(event.target.value)
+        }
+      />
+      <button
+        type="submit"
+        disabled={ isDisabled }
+        onClick={ (event) => handlerSubmit(event) }
+      >
+        Entrar
+      </button>
+    </form>
   );
 }
 

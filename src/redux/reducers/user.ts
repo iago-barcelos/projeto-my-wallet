@@ -1,24 +1,15 @@
-import { SAVE_EMAIL } from '../actions';
+import { AnyAction } from 'redux';
 
 const INITIAL_STATE = {
   email: '',
 };
 
-const userReducer = (
-  state = INITIAL_STATE,
-  action: { type: string, payload: { email: string } },
-) => {
+export const user = (state = INITIAL_STATE, action: AnyAction) => {
   switch (action.type) {
-    case SAVE_EMAIL:
-      return {
-        ...state,
-        email: action.payload.email,
-      };
-      return state;
-
-    default:
-      return state;
+    case 'ADD_EMAIL':
+      return ({
+        email: action.payload,
+      });
+    default: return state;
   }
 };
-
-export default userReducer;
